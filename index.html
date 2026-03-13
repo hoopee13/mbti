@@ -327,9 +327,130 @@
     .two-col, .clue-grid, .dialog-pair { grid-template-columns:1fr; }
     header { padding:44px 24px 40px; }
   }
+
+  /* ── PASSWORD LOCK ── */
+  .lock-screen {
+    position:fixed; inset:0; z-index:9999;
+    background:linear-gradient(135deg,#eef2ff 0%,#f5f0ff 50%,#e8f9f5 100%);
+    display:flex; align-items:center; justify-content:center;
+    flex-direction:column;
+  }
+  .lock-screen::before {
+    content:'';
+    position:absolute; inset:0;
+    background:
+      radial-gradient(circle 500px at 20% 40%, rgba(79,126,248,0.1) 0%, transparent 60%),
+      radial-gradient(circle 500px at 80% 60%, rgba(123,95,224,0.1) 0%, transparent 60%);
+    pointer-events:none;
+  }
+  .lock-box {
+    background:#fff; border-radius:24px;
+    border:1.5px solid #e0e6f8;
+    padding:48px 44px 44px;
+    width:100%; max-width:400px;
+    box-shadow:0 20px 60px rgba(79,126,248,0.15);
+    position:relative; text-align:center;
+  }
+  .lock-logo {
+    width:60px; height:60px; border-radius:18px;
+    background:linear-gradient(135deg,#4f7ef8,#7b5fe0);
+    display:flex; align-items:center; justify-content:center;
+    font-size:28px; margin:0 auto 20px;
+    box-shadow:0 8px 24px rgba(79,126,248,0.3);
+  }
+  .lock-org {
+    font-size:11px; letter-spacing:2px; text-transform:uppercase;
+    color:#8892b0; font-weight:600; margin-bottom:8px;
+  }
+  .lock-title {
+    font-family:'Poppins',sans-serif;
+    font-size:22px; font-weight:700; color:#1a2340;
+    margin-bottom:6px;
+  }
+  .lock-sub {
+    font-size:13px; color:#8892b0; margin-bottom:32px; line-height:1.6;
+  }
+  .lock-input-wrap { position:relative; margin-bottom:12px; }
+  .lock-input {
+    width:100%; padding:14px 48px 14px 18px;
+    border:1.5px solid #e0e6f8; border-radius:12px;
+    font-size:16px; font-family:'Noto Sans KR',sans-serif;
+    color:#1a2340; background:#f8f9fd;
+    outline:none; transition:border-color .2s, box-shadow .2s;
+    letter-spacing:2px;
+  }
+  .lock-input:focus {
+    border-color:#4f7ef8;
+    box-shadow:0 0 0 3px rgba(79,126,248,0.12);
+    background:#fff;
+  }
+  .lock-input.error {
+    border-color:#f86b6b;
+    box-shadow:0 0 0 3px rgba(248,107,107,0.12);
+    animation:shake .4s ease;
+  }
+  @keyframes shake {
+    0%,100%{transform:translateX(0)}
+    20%{transform:translateX(-8px)}
+    40%{transform:translateX(8px)}
+    60%{transform:translateX(-5px)}
+    80%{transform:translateX(5px)}
+  }
+  .lock-eye {
+    position:absolute; right:14px; top:50%; transform:translateY(-50%);
+    background:none; border:none; cursor:pointer; color:#8892b0;
+    font-size:18px; padding:4px;
+  }
+  .lock-error {
+    font-size:12px; color:#f86b6b; font-weight:600;
+    margin-bottom:14px; min-height:18px;
+    display:flex; align-items:center; justify-content:center; gap:5px;
+  }
+  .lock-btn {
+    width:100%; padding:14px;
+    background:linear-gradient(90deg,#4f7ef8,#7b5fe0);
+    border:none; border-radius:12px; cursor:pointer;
+    font-size:15px; font-weight:700; color:#fff;
+    font-family:'Noto Sans KR',sans-serif;
+    transition:opacity .2s, transform .15s;
+    box-shadow:0 6px 20px rgba(79,126,248,0.3);
+  }
+  .lock-btn:hover { opacity:.9; transform:translateY(-1px); }
+  .lock-btn:active { transform:translateY(0); }
+  .lock-footer {
+    margin-top:24px; font-size:11px; color:#b0b8cc;
+  }
+  .main-content { display:none; }
+  .main-content.unlocked { display:block; }
 </style>
 </head>
 <body>
+
+<!-- ── LOCK SCREEN ── -->
+<div class="lock-screen" id="lockScreen">
+  <div class="lock-box">
+    <div class="lock-logo">🌱</div>
+    <div class="lock-org">BUKGU YOUTH ASSOCIATION</div>
+    <div class="lock-title">북구청년회</div>
+    <div class="lock-sub">MBTI 완전 가이드에 접근하려면<br>비밀번호를 입력해주세요.</div>
+    <div class="lock-input-wrap">
+      <input
+        class="lock-input" id="pwInput"
+        type="password" placeholder="비밀번호 입력"
+        onkeydown="if(event.key==='Enter') tryUnlock()"
+        oninput="clearError()"
+        autocomplete="off"
+      />
+      <button class="lock-eye" onclick="togglePw()" title="보기/숨기기">👁</button>
+    </div>
+    <div class="lock-error" id="lockError"></div>
+    <button class="lock-btn" onclick="tryUnlock()">입장하기</button>
+    <div class="lock-footer">🔒 북구청년회 내부 교육 자료</div>
+  </div>
+</div>
+
+<!-- ── MAIN CONTENT ── -->
+<div class="main-content" id="mainContent">
 
 <div class="topbar">
   <div class="topbar-brand">
@@ -1338,6 +1459,35 @@ function buildTab4(d) {
   <div class="footer-logo">🌱 북구청년회</div>
   <div class="footer-sub">BUKGU YOUTH ASSOCIATION · 인간 이해 교육 자료 · 무단 복제 금지</div>
 </footer>
+
+</div><!-- /.main-content -->
+
+<script>
+function tryUnlock() {
+  const val = document.getElementById('pwInput').value;
+  if (val === 'qnrcjddl') {
+    document.getElementById('lockScreen').style.display = 'none';
+    document.getElementById('mainContent').classList.add('unlocked');
+  } else {
+    const input = document.getElementById('pwInput');
+    const err = document.getElementById('lockError');
+    input.classList.remove('error');
+    void input.offsetWidth;
+    input.classList.add('error');
+    err.innerHTML = '❌ 비밀번호가 틀렸습니다.';
+    input.value = '';
+    input.focus();
+  }
+}
+function clearError() {
+  document.getElementById('lockError').innerHTML = '';
+  document.getElementById('pwInput').classList.remove('error');
+}
+function togglePw() {
+  const inp = document.getElementById('pwInput');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+</script>
 
 </body>
 </html>
